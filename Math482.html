@@ -1,0 +1,305 @@
+<!-- 
+	Lemond Wyatt
+	MATH-482
+	11/6/22
+	Fall 
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.js'
+		integrity='sha512-CX7sDOp7UTAq+i1FYIlf9Uo27x4os+kGeoT7rgwvY+4dmjqV0IuE/Bl5hVsjnQPQiTOhAX1O2r2j5bjsFBvv/A=='
+		crossorigin='anonymous'></script>
+</head>
+
+<body>
+	<style>
+		.container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.num {
+			min-width: 100px;
+			font-size: 50px;
+			display: flex;
+			justify-content: center;
+			border-style: solid;
+			border-width: 1px;
+		}
+
+		.solution {
+			background-color: rgb(0, 141, 0);
+		}
+
+		.center {
+			display: flex;
+		}
+
+		.table {
+			display: flex;
+			font-size: 50px;
+			padding: 0 10px
+		}
+
+		#flips {
+			padding-top: 10px;
+		}
+
+		button {
+			font-size: 30px;
+		}
+
+		* {
+			font-size: 50px;
+		}
+	</style>
+
+	<div class="container">
+
+		<div>
+			<button onclick="GeneratePuzzle(40, Math.pow(Math.PI, 2))">Puzzle 1</button>
+			<button onclick="GeneratePuzzle(50, Math.pow(Math.E, 2))">Puzzle 2</button>
+			<button onclick="GeneratePuzzle(40, Math.pow(Math.E, 3))">Puzzle 3</button>
+			<button onclick="GeneratePuzzle(50, Math.pow(Math.E, 3))">Puzzle 4</button>
+			<button onclick="GeneratePuzzle(40, Math.pow(Math.E, 2))">Puzzle 5</button>
+			<button onclick="GeneratePuzzle(60, Math.pow(Math.E, 3))">Puzzle 6</button>
+		</div>
+
+		<div class="center">
+			<div id="puzzle"></div>
+			<div id="solution"></div>
+		</div>
+
+		<!-- <button onclick="Check()">Check</button> -->
+		<!-- <button onclick="Solve()">Solve</button> -->
+		<!-- <button onclick="(function(){Rotate(0); Draw(slices)})()">Rotate</button> -->
+
+		<div id="description"></div>
+		<div id="flips"></div>
+
+	</div>
+
+	<script>
+		var slices = [];
+		var minimumObstacle = [];
+		minimumObstacle.length = 9999;
+		var rotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+		var flipTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+		var MOTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+		var rtSave;
+		var checks = 0;
+		var solution = false;
+
+		function GeneratePuzzle(x, y) {
+			let n = 0;
+			let colors = [];
+			let calc;
+			solution = false;
+			checks = 0;
+			slices = []
+			rotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+			flipTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+			MOTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+			rtSave = null;
+			minimumObstacle.length = 9999;
+			$('#description').html(``)
+			$('#solution').html(``)
+			$('#flips').html(``)
+
+			while (colors.length < 27) {
+				calc = 1 + (Math.floor(++n * x * y) % 9);
+				if (colors.filter(e => e == calc).length == 3)
+					continue;
+				colors.push(calc)
+			}
+			console.log(colors)
+			while (colors.length > 0)
+				slices.push(colors.splice(0, 3))
+
+			console.log(slices)
+			//slices[0] = [1,1,1]
+			Draw()
+			Main()
+		}
+
+		function Main() {
+			Solve()
+			if (solution)
+				return;
+			FindMinimumObstacle()
+			$('#description').html(`No Solution without flips.<br/>
+					Minimum Obstacle: slices ${minimumObstacle}.`)
+
+			while (!flipTracker.every(e => e == 1)) {
+				Flip(0)
+				Solve()
+				if (solution)
+					return;
+			}
+			console.log(checks)
+			$('#description').html(`smthin wrong cuz all puzzles with flips have a solution...<br/>${checks} tries`)
+		}
+
+		function Solve() {
+			while (!rotateTracker.every(e => e == 2)) {
+				if (Check(slices)) {
+					SolutionFound()
+					return;
+				}
+				Rotate(0)
+			}
+			if (Check(slices)) {
+				SolutionFound()
+				return;
+			}
+			Rotate(0)
+		}
+
+		function Rotate(s) {
+			if (s > 8) {
+				rotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+				return;
+			}
+
+			slices[s].unshift(slices[s].pop())
+			if (++rotateTracker[s] > 2) {
+				rotateTracker[s] = 0;
+				Rotate(s + 1)
+			}
+		}
+
+		function Flip(s) {
+			slices[s].reverse();
+			if (++flipTracker[s] > 1) {
+				flipTracker[s] = 0;
+				Flip(s + 1)
+			}
+		}
+
+		function MOPerm(s) {
+			if (s > 8) {
+				MOTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+				return;
+			}
+
+			if (++MOTracker[s] > 1) {
+				MOTracker[s] = 0;
+				MOPerm(s + 1)
+			}
+		}
+
+		function Check(slices) {
+			let nums, obstacles, noCollisions = true;
+			obstacles = [];
+			checks++;
+
+			for (let i = 0; i < 3; i++) {
+				nums = [];
+				for (let j = 0; j < slices.length; j++) {
+					if (nums.includes(slices[j][i]))
+						return false;
+					nums.push(slices[j][i])
+				}
+			}
+
+			return true;
+		}
+
+		function FindMinimumObstacle() {
+			MOTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+			let pie = []
+			let moRotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+			let moSolve = () => {
+				
+			}
+
+			let moRotate = () => {
+				if (s > 8) {
+					moRotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+					return;
+				}
+
+				pie[s].unshift(pie[s].pop())
+				if (++moRotateTracker[s] > 2) {
+					moRotateTracker[s] = 0;
+					moRotate(s + 1)
+				}
+
+			}
+
+			while (!MOTracker.every(e => e == 1)) {
+				let arr = []
+				for (let i = 0; i < MOTracker.length; i++) {
+					if (MOTracker[i] == 1)
+						arr.push(slices[i])
+				}
+				let cl = Check(arr);
+				console.log(cl)
+				if (!cl)
+					console.log(arr)
+
+				if (MOTracker.filter(el => el).length < minimumObstacle.length) {
+					minimumObstacle = MOTracker;
+					//console.log(arr)
+				}
+				MOPerm(0)
+			}
+		}
+
+		function SolutionFound() {
+			solution = true;
+			let nums = "";
+			let pieces = "";
+			for (let i = 0; i < slices.length; i++) {
+				nums = "";
+				for (let j = 0; j < slices[i].length; j++) {
+					nums += `<div class='num solution'>${slices[i][j]}</div> `;
+				}
+				pieces +=
+					`<div class='table'>
+					<div>${i + 1}</div>
+					${nums}
+				 </div>`
+			}
+			$('#solution').html(pieces);
+			if (flipTracker.includes(1)) {
+				$('#flips').html(`Solution with flips found in ${checks} ${(checks > 1) ? 'tries' : 'try'}.<br/>
+						Slices Flipped: slice ${flipTracker.map((e, i) => { if (e) return i + 1; }).filter(Boolean)}.`)
+			} else {
+				$('#description').html(`Solution found in ${checks} ${(checks > 1) ? 'tries' : 'try'}`)
+			}
+		}
+
+		function Draw() {
+			let nums = "";
+			let pieces = "";
+			for (let i = 0; i < slices.length; i++) {
+				nums = "";
+				for (let j = 0; j < slices[i].length; j++) {
+					nums += `<div class='num'>${slices[i][j]}</div> `;
+				}
+				pieces +=
+					`<div class='table'>
+					<div>${i + 1}</div>
+					${nums}
+				 </div>`
+			}
+			$('#puzzle').html(pieces);
+		}
+
+		//GeneratePuzzle(79, Math.pow(Math.PI, 2))
+	</script>
+
+</body>
+
+</html>
