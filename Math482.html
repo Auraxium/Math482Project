@@ -12,7 +12,7 @@
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+	<title>Math482</title>
 	<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.js'
 		integrity='sha512-CX7sDOp7UTAq+i1FYIlf9Uo27x4os+kGeoT7rgwvY+4dmjqV0IuE/Bl5hVsjnQPQiTOhAX1O2r2j5bjsFBvv/A=='
 		crossorigin='anonymous'></script>
@@ -84,16 +84,15 @@
 
 		<div id="description"></div>
 		<div id="flips"></div>
+		<div id="testing"></div>
 
 	</div>
 
 	<script>
 		var slices = [];
-		var minimumObstacle = [];
-		minimumObstacle.length = 9999;
+		var minimumObstacle = [1,1,1,1,1,1,1,1,1];
 		var rotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 		var flipTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-		var MOTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 		var rtSave;
 		var checks = 0;
 		var solution = false;
@@ -107,7 +106,6 @@
 			slices = []
 			rotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 			flipTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
-			MOTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 			rtSave = null;
 			minimumObstacle.length = 9999;
 			$('#description').html(``)
@@ -125,6 +123,9 @@
 				slices.push(colors.splice(0, 3))
 
 			console.log(slices)
+			$('#testing').html(slices.map((e,i) => {return ' ('+e+')<br/>'}))
+			//$('#testing').append('------------<br/>')
+
 			//slices[0] = [1,1,1]
 			Draw()
 			Main()
@@ -136,16 +137,16 @@
 				return;
 			FindMinimumObstacle()
 			$('#description').html(`No Solution without flips.<br/>
-					Minimum Obstacle: slices ${minimumObstacle}.`)
+					Minimum Obstacle: slices ${minimumObstacle.map((e,i) => { if (e) return ' ' + (i + 1); }).filter(e => e) }.`)
 
-			while (!flipTracker.every(e => e == 1)) {
-				Flip(0)
-				Solve()
-				if (solution)
-					return;
-			}
-			console.log(checks)
-			$('#description').html(`smthin wrong cuz all puzzles with flips have a solution...<br/>${checks} tries`)
+		while (!flipTracker.every(e => e == 1)) {
+			Flip(0)
+			Solve()
+			if (solution)
+				return;
+		}
+		console.log(checks)
+		$('#description').html(`smthin wrong cuz all puzzles with flips have a solution...<br/>${checks} tries`)
 		}
 
 		function Solve() {
@@ -184,29 +185,17 @@
 			}
 		}
 
-		function MOPerm(s) {
-			if (s > 8) {
-				MOTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-				return;
-			}
-
-			if (++MOTracker[s] > 1) {
-				MOTracker[s] = 0;
-				MOPerm(s + 1)
-			}
-		}
-
-		function Check(slices) {
+		function Check(puzzle) {
 			let nums, obstacles, noCollisions = true;
 			obstacles = [];
 			checks++;
 
 			for (let i = 0; i < 3; i++) {
 				nums = [];
-				for (let j = 0; j < slices.length; j++) {
-					if (nums.includes(slices[j][i]))
+				for (let j = 0; j < puzzle.length; j++) {
+					if (nums.includes(puzzle[j][i])) 
 						return false;
-					nums.push(slices[j][i])
+					nums.push(puzzle[j][i])
 				}
 			}
 
@@ -214,21 +203,20 @@
 		}
 
 		function FindMinimumObstacle() {
-			MOTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+			let moPermutationTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 			let pie = []
-			let moRotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+			let moRotateTracker = []
+			let fails = []
 
-			let moSolve = () => {
-				
+			let moPerm = (s) => {
+				if (++moPermutationTracker[s] > 1) {
+					moPermutationTracker[s] = 0;
+					moPerm(s + 1)
+				}
 			}
 
-			let moRotate = () => {
-				if (s > 8) {
-					moRotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-					return;
-				}
-
+			let moRotate = (s) => {
 				pie[s].unshift(pie[s].pop())
 				if (++moRotateTracker[s] > 2) {
 					moRotateTracker[s] = 0;
@@ -237,25 +225,39 @@
 
 			}
 
-			while (!MOTracker.every(e => e == 1)) {
-				let arr = []
-				for (let i = 0; i < MOTracker.length; i++) {
-					if (MOTracker[i] == 1)
-						arr.push(slices[i])
+			let moSolve = () => {
+				if(pie.length == 0)
+				 	return true;
+				while (!moRotateTracker.every(e => e == 1)) {
+					if (Check(pie))
+						return true
+					else moRotate(0)
 				}
-				let cl = Check(arr);
-				console.log(cl)
-				if (!cl)
-					console.log(arr)
-
-				if (MOTracker.filter(el => el).length < minimumObstacle.length) {
-					minimumObstacle = MOTracker;
-					//console.log(arr)
-				}
-				MOPerm(0)
 			}
-		}
 
+			while (!moPermutationTracker.every(e => e == 1)) {
+				pie = [];
+				for (let i = 0; i < moPermutationTracker.length; i++) {
+					if (moPermutationTracker[i] == 1)
+						pie.push([...slices[i]])
+				}
+				moRotateTracker = Array.apply(null, Array(pie.length)).map(() => 0);
+				let result = moSolve();
+				if (!result)  {
+					fails.push(pie)
+					if(moPermutationTracker.filter(e => e==1).length < minimumObstacle.filter(e => e==1).length)
+						minimumObstacle = [...moPermutationTracker];
+					console.log(pie.length + ' ' +  minimumObstacle.length)
+					console.log([...moPermutationTracker])
+				}
+					
+				moPerm(0)
+			}
+			console.log('MOs: ')//1345789
+			console.log(fails)
+			console.log(minimumObstacle)
+		}
+ 
 		function SolutionFound() {
 			solution = true;
 			let nums = "";
@@ -274,10 +276,11 @@
 			$('#solution').html(pieces);
 			if (flipTracker.includes(1)) {
 				$('#flips').html(`Solution with flips found in ${checks} ${(checks > 1) ? 'tries' : 'try'}.<br/>
-						Slices Flipped: slice ${flipTracker.map((e, i) => { if (e) return i + 1; }).filter(Boolean)}.`)
+						Slices Flipped: slice ${flipTracker.map((e, i) => { if (e) return ' ' + (i + 1); }).filter(Boolean)}.`)
 			} else {
 				$('#description').html(`Solution found in ${checks} ${(checks > 1) ? 'tries' : 'try'}`)
 			}
+			//$('#testing').append(slices.map((e,i) => {return ' ('+e+')<br/>'}))
 		}
 
 		function Draw() {
