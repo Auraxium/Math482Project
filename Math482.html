@@ -104,10 +104,10 @@
 			solution = false;
 			checks = 0;
 			slices = []
+			minimumObstacle = [1,1,1,1,1,1,1,1,1];
 			rotateTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
 			flipTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 			rtSave = null;
-			minimumObstacle.length = 9999;
 			$('#description').html(``)
 			$('#solution').html(``)
 			$('#flips').html(``)
@@ -123,8 +123,6 @@
 				slices.push(colors.splice(0, 3))
 
 			console.log(slices)
-			$('#testing').html(slices.map((e,i) => {return ' ('+e+')<br/>'}))
-			//$('#testing').append('------------<br/>')
 
 			//slices[0] = [1,1,1]
 			Draw()
@@ -204,7 +202,7 @@
 
 		function FindMinimumObstacle() {
 			let moPermutationTracker = [0, 0, 0, 0, 0, 0, 0, 0, 0]
-
+			minimumObstacle = [1,1,1,1,1,1,1,1,1];
 			let pie = []
 			let moRotateTracker = []
 			let fails = []
@@ -280,7 +278,6 @@
 			} else {
 				$('#description').html(`Solution found in ${checks} ${(checks > 1) ? 'tries' : 'try'}`)
 			}
-			//$('#testing').append(slices.map((e,i) => {return ' ('+e+')<br/>'}))
 		}
 
 		function Draw() {
